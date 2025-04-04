@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="28px" height="33px" viewBox="0 0 28 33" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>Shape</title>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Japan" transform="translate(-424, -61)" fill="#4E3FCA" fill-rule="nonzero">
+            <g id="RivaVoice" transform="translate(424.35, 58.15)">
+                <path d="M0,35.85 C0,35.85 1.06666667,35.85 3.2,35.85 C6.4,35.85 6.4,33.3265637 6.4,30.325 C6.4,28.3239575 6.4,26.4822909 6.4,24.8 L12.3,24.8 L19.25,35.85 L26.85,35.85 L18.8,24.1 C23.2,22.65 25.65,19.1 25.65,13.95 C25.65,7.7 22,3.14976795 13.7,3.14976795 C9.00191736,3.14976795 5.47835539,3.14976795 3.12931407,3.14976795 C2.08620938,3.14976795 0,3.92371414 0,6.57952058 C0,8.35005821 0,18.1068847 0,35.85 Z M6.4,18.85 L6.4,9.1 L13.8,9.1 C17.85,9.1 19.2,11.15 19.2,13.95 C19.2,16.75 17.85,18.85 13.8,18.85 L6.4,18.85 Z" id="Shape"></path>
+            </g>
+        </g>
+    </g>
+</svg>
