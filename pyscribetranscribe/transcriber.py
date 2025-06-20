@@ -12,19 +12,27 @@ DEFAULT_ELEVENLABS_MODEL_ID = "scribe_v1"
 logger = logging.getLogger(__name__)
 # Configure basic logging if no handler is set by the calling application
 if not logger.hasHandlers():
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    )
+
 
 class ElevenLabsTranscriberError(Exception):
     """Custom exception for ElevenLabs Transcriber errors."""
+
     pass
+
 
 class ElevenLabsTranscriber:
     """Transcribes audio files using the ElevenLabs speech-to-text API."""
 
-    def __init__(self,
-                 api_key,
-                 api_url=DEFAULT_ELEVENLABS_API_URL,
-                 model_id=DEFAULT_ELEVENLABS_MODEL_ID):
+    def __init__(
+        self,
+        api_key,
+        api_url=DEFAULT_ELEVENLABS_API_URL,
+        model_id=DEFAULT_ELEVENLABS_MODEL_ID,
+    ):
         """
         Initializes the ElevenLabsTranscriber.
 
@@ -44,10 +52,12 @@ class ElevenLabsTranscriber:
 
         # Callbacks
         self.on_transcription_started = None
-        self.on_transcription_complete = None # Passes (text, word_count, char_count)
-        self.on_transcription_error = None   # Passes (error_message)
+        self.on_transcription_complete = None  # Passes (text, word_count, char_count)
+        self.on_transcription_error = None  # Passes (error_message)
 
-        logger.info(f"ElevenLabsTranscriber initialized. API URL: {self.api_url}, Model ID: {self.model_id}")
+        logger.info(
+            f"ElevenLabsTranscriber initialized. API URL: {self.api_url}, Model ID: {self.model_id}"
+        )
 
     def transcribe_file(self, file_path, include_non_speech=True):
         """
@@ -74,40 +84,50 @@ class ElevenLabsTranscriber:
             self.on_transcription_started()
 
         try:
-            headers = {
-                "xi-api-key": self.api_key
-            }
+            headers = {"xi-api-key": self.api_key}
             file_name = os.path.basename(file_path)
 
-            with open(file_path, 'rb') as f:
+            with open(file_path, "rb") as f:
                 files = {
-                    'file': (file_name, f, 'audio/wav'), # Assuming WAV, adjust if needed
-                    'model_id': (None, self.model_id),
+                    "file": (
+                        file_name,
+                        f,
+                        "audio/wav",
+                    ),  # Assuming WAV, adjust if needed
+                    "model_id": (None, self.model_id),
                     # Parameter name might vary between APIs
-                    'tag_audio_events': (None, str(include_non_speech).lower())
+                    "tag_audio_events": (None, str(include_non_speech).lower()),
                 }
 
-                logger.debug(f"Sending transcription request to {self.api_url} with model {self.model_id}")
-                response = requests.post(self.api_url, headers=headers, files=files)
+                # Construct the full URL including the model ID
+                full_api_url = f"{self.api_url}/{self.model_id}"
+                logger.debug(
+                    f"Sending transcription request to {full_api_url}"
+                )
+                response = requests.post(full_api_url, headers=headers, files=files)
 
                 if response.status_code == 200:
                     logger.info("Transcription received successfully.")
                     result = response.json()
-                    transcribed_text = result.get('text', '') # Safely get text
+                    transcribed_text = result.get("text", "")  # Safely get text
 
                     # Calculate stats
                     char_count = len(transcribed_text)
                     word_count = len(transcribed_text.split())
 
                     if self.on_transcription_complete:
-                        self.on_transcription_complete(transcribed_text, word_count, char_count)
+                        self.on_transcription_complete(
+                            transcribed_text, word_count, char_count
+                        )
 
                     return transcribed_text
                 else:
                     error_msg = f"API error {response.status_code}: {response.text}"
                     logger.error(error_msg)
                     if self.on_transcription_error:
-                        self.on_transcription_error(f"API error: {response.status_code}")
+                        self.on_transcription_error(
+                            f"API error: {response.status_code}"
+                        )
                     raise ElevenLabsTranscriberError(error_msg)
 
         except requests.exceptions.RequestException as e:
@@ -125,6 +145,7 @@ class ElevenLabsTranscriber:
                 self.on_transcription_error("Unexpected error during transcription.")
             raise ElevenLabsTranscriberError(error_msg) from e
 
+
 # Example usage block (optional)
 if __name__ == "__main__":
     print("--- Testing ElevenLabsTranscriber Module ---")
@@ -139,20 +160,26 @@ if __name__ == "__main__":
     # --- IMPORTANT ---
 
     api_key_from_env = os.environ.get("ELEVENLABS_API_KEY")
-    test_file = "test_audio.wav" # Needs to exist
+    test_file = "test_audio.wav"  # Needs to exist
 
     if not api_key_from_env:
         print("ERROR: ELEVENLABS_API_KEY environment variable not set. Skipping test.")
     elif not os.path.exists(test_file):
-         print(f"ERROR: Test audio file '{test_file}' not found. Skipping test.")
+        print(f"ERROR: Test audio file '{test_file}' not found. Skipping test.")
     else:
         try:
             transcriber = ElevenLabsTranscriber(api_key=api_key_from_env)
 
             # Simple callbacks
-            transcriber.on_transcription_started = lambda: print("Callback: Transcription started!")
-            transcriber.on_transcription_complete = lambda text, words, chars: print(f"Callback: Transcription complete! Words: {words}, Chars: {chars}\nText: '{text}'")
-            transcriber.on_transcription_error = lambda msg: print(f"Callback: ERROR: {msg}")
+            transcriber.on_transcription_started = lambda: print(
+                "Callback: Transcription started!"
+            )
+            transcriber.on_transcription_complete = lambda text, words, chars: print(
+                f"Callback: Transcription complete! Words: {words}, Chars: {chars}\nText: '{text}'"
+            )
+            transcriber.on_transcription_error = lambda msg: print(
+                f"Callback: ERROR: {msg}"
+            )
 
             print(f"Transcribing file: {test_file}...")
             transcribed_text = transcriber.transcribe_file(test_file)
@@ -164,7 +191,7 @@ if __name__ == "__main__":
                 print("Transcription failed (see callback/error output).")
 
         except (FileNotFoundError, ElevenLabsTranscriberError, ValueError) as e:
-             print(f"Caught expected error: {e}")
+            print(f"Caught expected error: {e}")
         except Exception as e:
             print(f"Caught unexpected error: {e}")
             print(traceback.format_exc())

@@ -1,16 +1,21 @@
 import sys
 import logging
-import webbrowser
-from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QLabel, QLineEdit,
-                           QPushButton, QHBoxLayout, QSpacerItem, QSizePolicy)
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QFont, QIcon, QPixmap
+from PyQt6.QtWidgets import (
+    QDialog,
+    QVBoxLayout,
+    QLabel,
+    QSpacerItem,
+    QSizePolicy,
+)
+from PyQt6.QtCore import Qt
+# Removed unused QFont, QIcon, QPixmap
 
 # Change to absolute imports
-from rivavoice.ui.components import StyledLineEdit, StyledButton, CardContainer
+from rivavoice.ui.components import StyledButton, CardContainer
 from rivavoice import constants
 
-logger = logging.getLogger(constants.APP_NAME) # Use constant
+logger = logging.getLogger(constants.APP_NAME)  # Use constant
+
 
 class OnboardingDialog(QDialog):
     """Dialog shown on first run to guide user through setup"""
@@ -21,7 +26,7 @@ class OnboardingDialog(QDialog):
 
         # Set window properties using constants
         self.setWindowTitle(f"Welcome to {constants.APP_NAME}")
-        self.setFixedSize(400, 420) # Adjusted height slightly
+        self.setFixedSize(400, 420)  # Adjusted height slightly
 
         # Remove title bar and make background transparent
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
@@ -39,7 +44,7 @@ class OnboardingDialog(QDialog):
         main_layout.setContentsMargins(20, 20, 20, 20)
 
         # Create card container
-        card = CardContainer(width=360, height=380) # Adjusted height slightly
+        card = CardContainer(width=360, height=380)  # Adjusted height slightly
         main_layout.addWidget(card)
 
         # Card layout
@@ -49,11 +54,13 @@ class OnboardingDialog(QDialog):
 
         # Welcome title using constant
         title = QLabel(f"Welcome to {constants.APP_NAME}")
-        title.setStyleSheet("""
+        title.setStyleSheet(
+            """
             font-size: 24px;
             font-weight: bold;
             color: #4E3FCA;
-        """)
+        """
+        )
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         card_layout.addWidget(title)
 
@@ -62,7 +69,9 @@ class OnboardingDialog(QDialog):
             f"{constants.APP_NAME} transcribes your speech using advanced AI models."
         )
         description.setWordWrap(True)
-        description.setStyleSheet("font-size: 14px; color: #374151; margin-bottom: 10px;")
+        description.setStyleSheet(
+            "font-size: 14px; color: #374151; margin-bottom: 10px;"
+        )
         description.setAlignment(Qt.AlignmentFlag.AlignCenter)
         card_layout.addWidget(description)
 
@@ -76,14 +85,14 @@ class OnboardingDialog(QDialog):
         )
         config_explanation.setWordWrap(True)
         config_explanation.setStyleSheet("font-size: 14px; color: #374151;")
-        config_explanation.setTextFormat(Qt.TextFormat.RichText) # Allow bold tag
+        config_explanation.setTextFormat(Qt.TextFormat.RichText)  # Allow bold tag
         card_layout.addWidget(config_explanation)
 
         # Expanding spacer
         card_layout.addStretch()
 
         # FN key note for Mac users
-        if sys.platform == 'darwin':
+        if sys.platform == "darwin":
             # Use constant for default keybind display
             fn_note = QLabel(
                 f"Note: This app uses the {constants.DEFAULT_KEYBIND.upper()} key by default. You may need to "
@@ -91,18 +100,24 @@ class OnboardingDialog(QDialog):
                 "Keyboard Shortcuts > Function Keys."
             )
             fn_note.setWordWrap(True)
-            fn_note.setStyleSheet("""
+            fn_note.setStyleSheet(
+                """
                 font-size: 12px;
                 color: #6B7280;
                 background-color: #F9FAFB;
                 padding: 10px;
                 border-radius: 6px;
                 border: 1px solid #E5E7EB;
-            """)
+            """
+            )
             card_layout.addWidget(fn_note)
 
             # Small spacer
-            card_layout.addSpacerItem(QSpacerItem(20, 10, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed))
+            card_layout.addSpacerItem(
+                QSpacerItem(
+                    20, 10, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed
+                )
+            )
 
         # Continue button
         continue_button = StyledButton("Continue")
@@ -113,6 +128,7 @@ class OnboardingDialog(QDialog):
         """Close the onboarding dialog."""
         logger.info("Onboarding finished, closing dialog.")
         self.accept()
+
 
 # For testing
 if __name__ == "__main__":

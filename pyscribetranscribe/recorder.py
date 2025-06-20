@@ -1,11 +1,16 @@
+"""
+Provides the AudioRecorder class for capturing microphone input using PyAudio.
+
+Supports saving recordings to WAV files and providing real-time audio chunks
+via a callback mechanism.
+"""
 import os
 import pyaudio
 import wave
 import threading
 import logging
 import tempfile
-import traceback
-import time # Keep time for testing block if added later
+import time  # Keep time for testing block if added later
 
 # Define default audio parameters here or pass them all in __init__
 DEFAULT_AUDIO_FORMAT = pyaudio.paInt16
@@ -19,11 +24,17 @@ DEFAULT_RECORDING_FILENAME = "recording.wav"
 logger = logging.getLogger(__name__)
 # Configure basic logging if no handler is set by the calling application
 if not logger.hasHandlers():
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    )
+
 
 class AudioRecorderError(Exception):
     """Custom exception for AudioRecorder errors."""
+
     pass
+
 
 class AudioRecorder:
     """
@@ -31,13 +42,15 @@ class AudioRecorder:
     and/or provide audio chunks via a callback for real-time processing.
     """
 
-    def __init__(self,
-                 recording_file=None,
-                 audio_format=DEFAULT_AUDIO_FORMAT,
-                 channels=DEFAULT_AUDIO_CHANNELS,
-                 rate=DEFAULT_AUDIO_RATE,
-                 chunk=DEFAULT_AUDIO_CHUNK,
-                 chunk_callback=None):
+    def __init__(
+        self,
+        recording_file=None,
+        audio_format=DEFAULT_AUDIO_FORMAT,
+        channels=DEFAULT_AUDIO_CHANNELS,
+        rate=DEFAULT_AUDIO_RATE,
+        chunk=DEFAULT_AUDIO_CHUNK,
+        chunk_callback=None,
+    ):
         """
         Initializes the AudioRecorder.
 
@@ -55,11 +68,13 @@ class AudioRecorder:
         """
         # Determine recording file path and whether saving is enabled
         if recording_file is None:
-            self.recording_file = None # Indicate saving is disabled
+            self.recording_file = None  # Indicate saving is disabled
             self.save_enabled = False
             logger.info("Recording file path is None, saving will be skipped.")
-        elif recording_file == "": # Treat empty string as default path
-            self.recording_file = os.path.join(DEFAULT_TEMP_DIR, DEFAULT_RECORDING_FILENAME)
+        elif recording_file == "":  # Treat empty string as default path
+            self.recording_file = os.path.join(
+                DEFAULT_TEMP_DIR, DEFAULT_RECORDING_FILENAME
+            )
             self.save_enabled = True
             logger.info(f"Recording file path set to default: {self.recording_file}")
         else:
@@ -81,11 +96,13 @@ class AudioRecorder:
 
         # Callbacks
         self.on_recording_started = None
-        self.on_recording_stopped = None # Passes file_path (str or None)
-        self.on_recording_error = None   # Passes error_message (str)
-        self.chunk_callback = chunk_callback # Store the chunk callback
+        self.on_recording_stopped = None  # Passes file_path (str or None)
+        self.on_recording_error = None  # Passes error_message (str)
+        self.chunk_callback = chunk_callback  # Store the chunk callback
 
-        logger.info(f"AudioRecorder initialized. Format={self.format}, Channels={self.channels}, Rate={self.rate}, Chunk={self.chunk}")
+        logger.info(
+            f"AudioRecorder initialized. Format={self.format}, Channels={self.channels}, Rate={self.rate}, Chunk={self.chunk}"
+        )
 
     def start_recording(self):
         """Start audio recording in a separate thread."""
@@ -111,7 +128,7 @@ class AudioRecorder:
             self.recording = False
             if self.on_recording_error:
                 self.on_recording_error(error_msg)
-            raise AudioRecorderError(error_msg) from e # Raise custom exception
+            raise AudioRecorderError(error_msg) from e  # Raise custom exception
 
     def stop_recording(self):
         """Stop the current recording and potentially save the file."""
@@ -121,11 +138,13 @@ class AudioRecorder:
 
         try:
             logger.info("Stopping recording...")
-            self.recording = False # Signal the recording thread to stop
+            self.recording = False  # Signal the recording thread to stop
 
             if self.audio_thread and self.audio_thread.is_alive():
                 logger.info("Waiting for recording thread to complete...")
-                self.audio_thread.join(timeout=5.0) # Wait for thread to finish cleanup/saving
+                self.audio_thread.join(
+                    timeout=5.0
+                )  # Wait for thread to finish cleanup/saving
                 if self.audio_thread.is_alive():
                     # This case is problematic, thread didn't exit cleanly
                     error_msg = "Recording thread did not complete in time."
@@ -133,12 +152,12 @@ class AudioRecorder:
                     if self.on_recording_error:
                         self.on_recording_error(error_msg)
                     # Don't raise here, but indicate failure
-                    return False # Indicate failure
+                    return False  # Indicate failure
 
             logger.info("Recording stopped signal processed.")
             # Note: The actual 'stopped' callback is triggered from within the thread
             # after saving (or deciding not to save). This ensures saving is complete.
-            return True # Indicate success in signaling stop
+            return True  # Indicate success in signaling stop
 
         except Exception as e:
             error_msg = f"Error signaling stop recording: {e}"
@@ -146,7 +165,7 @@ class AudioRecorder:
             if self.on_recording_error:
                 self.on_recording_error(error_msg)
             # Don't raise here, allow potential cleanup
-            return False # Indicate failure
+            return False  # Indicate failure
 
     def _record_audio(self):
         """Internal method to record audio in a thread."""
@@ -161,7 +180,7 @@ class AudioRecorder:
                 channels=self.channels,
                 rate=self.rate,
                 input=True,
-                frames_per_buffer=self.chunk
+                frames_per_buffer=self.chunk,
             )
             logger.info("Audio stream opened. Recording...")
 
@@ -174,18 +193,24 @@ class AudioRecorder:
                             # Consider running callback in executor if it's blocking
                             self.chunk_callback(data)
                         except Exception as cb_e:
-                            logger.error(f"Error in chunk_callback: {cb_e}", exc_info=True)
+                            logger.error(
+                                f"Error in chunk_callback: {cb_e}", exc_info=True
+                            )
                             # Decide if this should stop recording? For now, just log.
                     # Still append frames if saving is enabled
                     if self.save_enabled:
                         self.frames.append(data)
                 except IOError as e:
                     # This can happen if the stream is closed prematurely or device issues
-                    if self.recording: # Only log warning if we expected to still be recording
-                         logger.warning(f"IOError during recording stream read: {e}. Continuing...")
+                    if (
+                        self.recording
+                    ):  # Only log warning if we expected to still be recording
+                        logger.warning(
+                            f"IOError during recording stream read: {e}. Continuing..."
+                        )
                     else:
-                         logger.debug(f"IOError after stop signal: {e}. Expected.")
-                         break # Exit loop if stop was signaled
+                        logger.debug(f"IOError after stop signal: {e}. Expected.")
+                        break  # Exit loop if stop was signaled
 
             logger.info("Recording loop finished.")
 
@@ -217,15 +242,16 @@ class AudioRecorder:
             # Save the recording after cleanup if enabled
             saved_file_path = None
             if self.save_enabled:
-                saved_file_path = self._save_recording() # Returns path or None
+                saved_file_path = self._save_recording()  # Returns path or None
 
             # Trigger the final stopped callback *after* all cleanup and saving attempt
             if self.on_recording_stopped:
                 try:
                     self.on_recording_stopped(saved_file_path)
                 except Exception as cb_e:
-                     logger.error(f"Error in on_recording_stopped callback: {cb_e}", exc_info=True)
-
+                    logger.error(
+                        f"Error in on_recording_stopped callback: {cb_e}", exc_info=True
+                    )
 
     def _save_recording(self):
         """
@@ -236,23 +262,27 @@ class AudioRecorder:
             logger.warning("No frames recorded, skipping save.")
             if self.on_recording_error:
                 self.on_recording_error("No audio data was recorded to save.")
-            return None # Indicate failure/no file
+            return None  # Indicate failure/no file
 
         # Should always have a path if save_enabled is True, but double-check
         if not self.recording_file:
-             logger.error("Attempted to save recording but recording_file path is missing.")
-             if self.on_recording_error:
-                  self.on_recording_error("Internal error: Recording file path missing during save.")
-             return None
+            logger.error(
+                "Attempted to save recording but recording_file path is missing."
+            )
+            if self.on_recording_error:
+                self.on_recording_error(
+                    "Internal error: Recording file path missing during save."
+                )
+            return None
 
         try:
             # Ensure the directory exists
             recording_dir = os.path.dirname(self.recording_file)
-            if recording_dir: # Only create if path includes a directory
-                 os.makedirs(recording_dir, exist_ok=True)
+            if recording_dir:  # Only create if path includes a directory
+                os.makedirs(recording_dir, exist_ok=True)
 
             logger.info(f"Saving recording to {self.recording_file}")
-            with wave.open(self.recording_file, 'wb') as wf:
+            with wave.open(self.recording_file, "wb") as wf:
                 wf.setnchannels(self.channels)
                 # Need PyAudio instance to get sample size if not already terminated
                 # This is slightly inefficient but ensures correctness if PyAudio was terminated early
@@ -260,20 +290,21 @@ class AudioRecorder:
                 try:
                     sample_width = temp_audio.get_sample_size(self.format)
                 finally:
-                    temp_audio.terminate() # Clean up temporary instance
+                    temp_audio.terminate()  # Clean up temporary instance
 
                 wf.setsampwidth(sample_width)
                 wf.setframerate(self.rate)
-                wf.writeframes(b''.join(self.frames))
+                wf.writeframes(b"".join(self.frames))
 
             logger.info("Recording saved successfully.")
-            return self.recording_file # Return path on success
+            return self.recording_file  # Return path on success
         except Exception as e:
             error_msg = f"Error saving WAV file '{self.recording_file}': {e}"
             logger.error(error_msg, exc_info=True)
             if self.on_recording_error:
                 self.on_recording_error(error_msg)
-            return None # Return None on failure
+            return None  # Return None on failure
+
 
 # Example usage block (optional, can be removed or kept for testing)
 if __name__ == "__main__":
@@ -284,10 +315,12 @@ if __name__ == "__main__":
 
     # --- Test Case 1: Saving Enabled (Default Path) ---
     print("\n--- Test Case 1: Saving Enabled (Default Path) ---")
-    recorder1 = AudioRecorder(recording_file="") # Use default path
+    recorder1 = AudioRecorder(recording_file="")  # Use default path
 
     recorder1.on_recording_started = lambda: print("Callback 1: Recording started!")
-    recorder1.on_recording_stopped = lambda file: print(f"Callback 1: Recording stopped! File saved: {file}")
+    recorder1.on_recording_stopped = lambda file: print(
+        f"Callback 1: Recording stopped! File saved: {file}"
+    )
     recorder1.on_recording_error = lambda msg: print(f"Callback 1: ERROR: {msg}")
 
     try:
@@ -296,7 +329,9 @@ if __name__ == "__main__":
             time.sleep(2)
             print("Stopping recording...")
             if recorder1.stop_recording():
-                print(f"Test 1 recording should be saved to: {recorder1.recording_file}")
+                print(
+                    f"Test 1 recording should be saved to: {recorder1.recording_file}"
+                )
                 # Optional: Clean up
                 # try: os.remove(recorder1.recording_file) except OSError: pass
             else:
@@ -308,10 +343,10 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"Test 1: Caught unexpected error: {e}", exc_info=True)
 
-
     # --- Test Case 2: Saving Disabled + Chunk Callback ---
     print("\n--- Test Case 2: Saving Disabled + Chunk Callback ---")
     chunk_count = 0
+
     def my_chunk_callback(data):
         global chunk_count
         chunk_count += 1
@@ -320,7 +355,9 @@ if __name__ == "__main__":
     recorder2 = AudioRecorder(recording_file=None, chunk_callback=my_chunk_callback)
 
     recorder2.on_recording_started = lambda: print("Callback 2: Recording started!")
-    recorder2.on_recording_stopped = lambda file: print(f"Callback 2: Recording stopped! File saved: {file} (should be None)")
+    recorder2.on_recording_stopped = lambda file: print(
+        f"Callback 2: Recording stopped! File saved: {file} (should be None)"
+    )
     recorder2.on_recording_error = lambda msg: print(f"Callback 2: ERROR: {msg}")
 
     try:
@@ -329,7 +366,9 @@ if __name__ == "__main__":
             time.sleep(2)
             print("Stopping recording...")
             if recorder2.stop_recording():
-                print(f"Test 2: Recording stopped. Total chunks received: {chunk_count}")
+                print(
+                    f"Test 2: Recording stopped. Total chunks received: {chunk_count}"
+                )
             else:
                 print("Test 2: Failed to stop recording cleanly.")
         else:
@@ -338,6 +377,5 @@ if __name__ == "__main__":
         print(f"Test 2: Caught AudioRecorderError: {e}")
     except Exception as e:
         print(f"Test 2: Caught unexpected error: {e}", exc_info=True)
-
 
     print("\n--- AudioRecorder Test End ---")

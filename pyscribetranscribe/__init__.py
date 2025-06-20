@@ -1,6 +1,7 @@
 """
 Audio Module for Recording and Transcription
 """
+
 import logging
 
 # Configure logging for the module package
@@ -10,21 +11,23 @@ log = logging.getLogger(__name__)
 log.addHandler(logging.NullHandler())
 
 # Import main classes and exceptions for easier access
-from .recorder import AudioRecorder, AudioRecorderError
+from .recorder import AudioRecorder, AudioRecorderError  # noqa: E402
+
 # Import renamed ElevenLabs classes
-from .transcriber import ElevenLabsTranscriber, ElevenLabsTranscriberError
+from .transcriber import ElevenLabsTranscriber, ElevenLabsTranscriberError  # noqa: E402
+
 # Import new OpenAI classes
-from .openai_realtime_transcriber import OpenAIRealtimeTranscriber, OpenAIRealtimeError
+from .openai_realtime_transcriber import OpenAIRealtimeTranscriber, OpenAIRealtimeError  # noqa: E402
 
 # Define what gets imported with 'from pyscribetranscribe import *'
 # (Generally discouraged, but good practice to define)
 __all__ = [
-    'AudioRecorder',
-    'AudioRecorderError',
-    'ElevenLabsTranscriber',
-    'ElevenLabsTranscriberError',
-    'OpenAIRealtimeTranscriber',
-    'OpenAIRealtimeError'
+    "AudioRecorder",
+    "AudioRecorderError",
+    "ElevenLabsTranscriber",
+    "ElevenLabsTranscriberError",
+    "OpenAIRealtimeTranscriber",
+    "OpenAIRealtimeError",
 ]
 
 # Optional: Define a version for the module

@@ -1,14 +1,14 @@
 import os
-import sys
 import logging
 import traceback
-from PyQt6.QtWidgets import QSystemTrayIcon, QMenu, QApplication
+from PyQt6.QtWidgets import QSystemTrayIcon, QMenu
 from PyQt6.QtGui import QIcon, QAction
-from PyQt6.QtCore import QObject, pyqtSignal, Qt
-from rivavoice import constants # Change to absolute import
-from rivavoice.utils import resource_path # Change to absolute import
+from PyQt6.QtCore import QObject, pyqtSignal
+from rivavoice import constants  # Change to absolute import
+from rivavoice.utils import resource_path  # Change to absolute import
 
-logger = logging.getLogger(constants.APP_NAME) # Use constant
+logger = logging.getLogger(constants.APP_NAME)  # Use constant
+
 
 class TrayManager(QObject):
     """Manages the system tray icon and menu"""
@@ -32,28 +32,36 @@ class TrayManager(QObject):
                 return
 
             # Create tray icon
-            self.tray_icon = QSystemTrayIcon(self.main_window) # Parent to main window
+            self.tray_icon = QSystemTrayIcon(self.main_window)  # Parent to main window
 
             # Load icon using resource_path
-            icon_path = resource_path(constants.ICON_TRAY_SVG) # Use constant & resource_path
+            icon_path = resource_path(
+                constants.ICON_TRAY_SVG
+            )  # Use constant & resource_path
             if os.path.exists(icon_path):
                 self.tray_icon.setIcon(QIcon(icon_path))
             else:
-                logger.warning(f"Tray icon file not found at resolved path: {icon_path}")
+                logger.warning(
+                    f"Tray icon file not found at resolved path: {icon_path}"
+                )
                 # Provide a fallback icon from Qt themes if available
-                fallback_icon = QIcon.fromTheme("audio-input-microphone", QIcon(":/qt-project.org/styles/commonstyle/images/standardbutton-cancel-16.png")) # Example fallback
+                fallback_icon = QIcon.fromTheme(
+                    "audio-input-microphone",
+                    QIcon(
+                        ":/qt-project.org/styles/commonstyle/images/standardbutton-cancel-16.png"
+                    ),
+                )  # Example fallback
                 if not fallback_icon.isNull():
                     self.tray_icon.setIcon(fallback_icon)
                 else:
-                     logger.error("Could not load primary or fallback tray icon.")
-
+                    logger.error("Could not load primary or fallback tray icon.")
 
             # Create tray menu
             tray_menu = QMenu()
 
             # Show action
             show_action = QAction("Show App", self)
-            show_action.triggered.connect(self._emit_show_app) # Emit signal
+            show_action.triggered.connect(self._emit_show_app)  # Emit signal
             tray_menu.addAction(show_action)
 
             # Separator
@@ -61,7 +69,7 @@ class TrayManager(QObject):
 
             # Quit action
             quit_action = QAction("Quit", self)
-            quit_action.triggered.connect(self._emit_quit_app) # Emit signal
+            quit_action.triggered.connect(self._emit_quit_app)  # Emit signal
             tray_menu.addAction(quit_action)
 
             # Set tray menu
@@ -77,14 +85,13 @@ class TrayManager(QObject):
         except Exception as e:
             logger.error(f"Error setting up system tray icon: {e}")
             logger.error(traceback.format_exc())
-            self.tray_icon = None # Ensure tray_icon is None if setup fails
+            self.tray_icon = None  # Ensure tray_icon is None if setup fails
 
     def _tray_icon_activated(self, reason):
         """Handle tray icon activation (left-click)"""
         if reason == QSystemTrayIcon.ActivationReason.Trigger:
             # Emit signal for MainWindow to handle show/hide
-             self._emit_show_app()
-
+            self._emit_show_app()
 
     def _emit_show_app(self):
         """Emit signal to show the main window"""
@@ -106,11 +113,15 @@ class TrayManager(QObject):
             if os.path.exists(resolved_path):
                 self.tray_icon.setIcon(QIcon(resolved_path))
             else:
-                logger.warning(f"Icon path for tray update not found at resolved path: {resolved_path}")
+                logger.warning(
+                    f"Icon path for tray update not found at resolved path: {resolved_path}"
+                )
 
-    def show_message(self, title, message, icon=QSystemTrayIcon.MessageIcon.Information, msecs=5000):
-         """Show a balloon message from the tray icon"""
-         if self.tray_icon:
-             self.tray_icon.showMessage(title, message, icon, msecs)
-         else:
-             logger.warning("Cannot show tray message: tray icon not available.")
+    def show_message(
+        self, title, message, icon=QSystemTrayIcon.MessageIcon.Information, msecs=5000
+    ):
+        """Show a balloon message from the tray icon"""
+        if self.tray_icon:
+            self.tray_icon.showMessage(title, message, icon, msecs)
+        else:
+            logger.warning("Cannot show tray message: tray icon not available.")
