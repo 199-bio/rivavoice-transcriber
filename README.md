@@ -1,82 +1,149 @@
 # RivaVoice
 
-A minimalist speech-to-text application with a beautiful card-based UI. Record your voice and automatically transcribe it using ElevenLabs' speech recognition API. The transcribed text is automatically copied to the clipboard and optionally pasted at the cursor position.
+A minimalist speech-to-text application for macOS with clean architecture and simple design.
 
 ## Features
 
-- Beautiful card-based UI with rounded corners inspired by Apple's design language
-- Record audio with a visual pulsing orb that changes color to indicate recording status
-- Transcribe speech to text using ElevenLabs API
-- Automatically paste transcribed text at cursor position
-- Configurable settings with a clean interface
-- Keyboard shortcut (FN key) support for easy recording
+- **One-Button Recording**: Press hotkey to start/stop recording
+- **Instant Transcription**: Powered by ElevenLabs API
+- **Auto-Paste**: Transcribed text automatically copied to clipboard
+- **Background Operation**: Runs silently in the background
+- **Clean Architecture**: Separate backend core with pluggable UI
+- **Multiple Modes**: Standard, chunked, and direct-type modes
+- **Audio Feedback**: System sounds for start/stop recording
 
-## Requirements
+## Quick Start
 
-- Python 3.6+
-- PyQt6
-- pyaudio
-- pynput
-- requests
-- pyperclip
+### Prerequisites
 
-## Installation
+- macOS 10.15 or later
+- Python 3.8+
+- ElevenLabs API key
 
-1. Clone this repository:
-```
-git clone https://github.com/yourusername/rivavoice.git
-cd rivavoice
-```
+### Installation
 
-2. Install dependencies:
-```
-pip install PyQt6 pyaudio pynput requests pyperclip
-```
+```bash
+# Clone the repository
+git clone https://github.com/199-bio/rivavoice-transcriber.git
+cd rivavoice-transcriber
 
-3. Run the application:
-```
-python voice.py
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the terminal UI
+python rivavoice.py
 ```
 
-## Usage
+### First Run
 
-- Double-press the FN key to start recording
-- Single-press the FN key to stop recording and start transcription
-- The transcribed text will be automatically copied to your clipboard and pasted at the cursor position
-- Click the settings button to configure your ElevenLabs API key and other preferences
+1. The app will prompt for your ElevenLabs API key
+2. Set your preferred hotkey (default: F1)
+3. Press the hotkey to start/stop recording
 
-## Project Structure
-
-The project has been reorganized into a more modular structure:
+## Architecture
 
 ```
 rivavoice/
-├── __init__.py
-├── __main__.py
-├── config.py
-├── utils.py
-├── audio/
-│   ├── __init__.py
-│   ├── recorder.py
-│   └── transcriber.py
-└── ui/
-    ├── __init__.py
-    ├── components.py
-    ├── main_window.py
-    ├── recording_view.py
-    └── settings_view.py
-voice.py
-doubleping.wav
-singleping.wav
-README.md
+├── rivacore/              # Core backend package
+│   ├── backend.py         # Main API class
+│   ├── audio.py           # Audio recording
+│   ├── transcriber.py     # ElevenLabs client
+│   ├── hotkey.py          # Global hotkey manager
+│   └── config.py          # Settings persistence
+├── rivavoice.py           # Terminal UI
+├── requirements.txt       # Dependencies
+└── test_backend.py        # Interactive test
 ```
+
+### Design Principles
+
+- **Minimalist**: Only essential features
+- **Reliable**: Comprehensive error handling
+- **Clean**: UI-agnostic backend
+- **Fast**: Optimized for quick transcription
 
 ## Configuration
 
-The app stores its configuration in `~/.rivavoiceconfig.json`. You can set your ElevenLabs API key, transcript folder, keybinding, and sound preferences in the settings view.
+Settings are stored in `~/.rivavoice/config.json`:
+
+```json
+{
+  "api_key": "your-elevenlabs-key",
+  "hotkey": "F1",
+  "timeout_minutes": 5,
+  "auto_paste": true,
+  "preserve_clipboard": false,
+  "chunked_mode": false
+}
+```
+
+## Usage Modes
+
+### Standard Mode
+Press hotkey to start recording, press again to stop and transcribe.
+
+### Chunked Mode
+Automatically transcribes after detecting silence. Great for dictation.
+
+### Direct Type Mode
+When `preserve_clipboard` is enabled, simulates keyboard typing instead of using clipboard.
+
+## API
+
+```python
+from rivacore import RivaBackend
+
+# Initialize backend
+backend = RivaBackend()
+
+# Configure
+backend.set_api_key("your-key")
+backend.set_hotkey("F1")
+
+# Record and transcribe
+backend.start_recording()
+text = backend.stop_recording()
+```
+
+## Development
+
+### Running Tests
+
+```bash
+# Interactive backend test
+python test_backend.py
+
+# Test specific features
+python test_chunked.py
+python test_fn_key.py
+```
+
+### Building a UI
+
+The backend is UI-agnostic. To build your own UI:
+
+1. Import `RivaBackend` from `rivacore`
+2. Use the backend API for all operations
+3. Handle callbacks for recording state changes
+
+## Troubleshooting
+
+### Microphone Access
+macOS requires explicit microphone permission. Grant access when prompted.
+
+### Hotkey Not Working
+Some applications may capture hotkeys. Try a different key combination.
+
+### API Errors
+Ensure your ElevenLabs API key is valid and has sufficient credits.
+
+## License
+
+MIT License - See LICENSE file for details.
 
 ## Credits
 
-- Card-based UI inspired by Apple's design language
-- Sound effects for recording start/stop
-- Transcription powered by ElevenLabs API 
+Built with:
+- [PyAudio](https://pypi.org/project/PyAudio/) - Audio recording
+- [ElevenLabs](https://elevenlabs.io/) - Speech transcription
+- [pynput](https://pypi.org/project/pynput/) - Global hotkeys
