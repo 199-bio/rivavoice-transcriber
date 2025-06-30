@@ -1,26 +1,29 @@
-# RivaVoice
+# RivaVoice 🎙️
 
-A minimalist speech-to-text application for macOS with clean architecture and simple design.
+A lightning-fast, minimalist speech-to-text macOS app that lives in your menu bar. Press a hotkey, speak, and watch your words appear instantly.
 
-## Features
+![macOS](https://img.shields.io/badge/macOS-10.15+-blue)
+![Python](https://img.shields.io/badge/Python-3.8+-green)
+![License](https://img.shields.io/badge/License-MIT-yellow)
 
-- **One-Button Recording**: Press hotkey to start/stop recording
-- **Instant Transcription**: Powered by ElevenLabs API
-- **Auto-Paste**: Transcribed text automatically copied to clipboard
-- **Background Operation**: Runs silently in the background
-- **Clean Architecture**: Separate backend core with pluggable UI
-- **Multiple Modes**: Standard, chunked, and direct-type modes
-- **Audio Feedback**: System sounds for start/stop recording
+## ✨ Features
 
-## Quick Start
+- **🚀 Instant Transcription** - Powered by ElevenLabs' state-of-the-art speech recognition
+- **⌨️ Global Hotkey** - Record from anywhere with a single keypress (default: Fn key)
+- **📋 Smart Clipboard** - Transcribed text automatically copied and ready to paste
+- **🎯 Menu Bar App** - Lightweight, always accessible, never in your way
+- **🎨 Beautiful UI** - Clean, modern interface with smooth animations
+- **🔒 Privacy First** - Audio processed locally, only transcription uses API
 
-### Prerequisites
+## 🎬 Quick Start
 
-- macOS 10.15 or later
-- Python 3.8+
-- ElevenLabs API key
+### Download Pre-built App
 
-### Installation
+1. Download the latest release from [Releases](https://github.com/199-bio/rivavoice-transcriber/releases)
+2. Open `RivaVoice.dmg` and drag to Applications
+3. Launch RivaVoice and follow the setup wizard
+
+### Build from Source
 
 ```bash
 # Clone the repository
@@ -28,122 +31,103 @@ git clone https://github.com/199-bio/rivavoice-transcriber.git
 cd rivavoice-transcriber
 
 # Install dependencies
-pip install -r requirements.txt
+pip install -e .
 
-# Run the terminal UI
-python rivavoice.py
+# Run the app
+python -m rivavoice
 ```
 
-### First Run
+## 🔧 Configuration
 
-1. The app will prompt for your ElevenLabs API key
-2. Set your preferred hotkey (default: F1)
-3. Press the hotkey to start/stop recording
+On first launch, RivaVoice will guide you through:
 
-## Architecture
+1. **API Setup** - Enter your ElevenLabs API key ([Get one here](https://elevenlabs.io))
+2. **Permissions** - Grant microphone and accessibility access
+3. **Hotkey** - Choose your recording hotkey
+
+Settings are stored in `~/.rivavoiceconfig.json`
+
+## 🎯 Usage
+
+1. **Start Recording** - Press your hotkey (default: Fn)
+2. **Speak** - The recording indicator will pulse
+3. **Stop Recording** - Press hotkey again
+4. **Paste** - Your transcribed text is ready to paste anywhere!
+
+### Pro Tips
+
+- **Quick Mode**: Enable "Paste after transcription" for instant text insertion
+- **Visual Feedback**: Watch the pulsing orb to confirm recording status
+- **Background Recording**: Minimize the app - it keeps working from the menu bar
+
+## 🏗️ Architecture
 
 ```
 rivavoice/
-├── rivacore/              # Core backend package
-│   ├── backend.py         # Main API class
-│   ├── audio.py           # Audio recording
-│   ├── transcriber.py     # ElevenLabs client
-│   ├── hotkey.py          # Global hotkey manager
-│   └── config.py          # Settings persistence
-├── rivavoice.py           # Terminal UI
-├── requirements.txt       # Dependencies
-└── test_backend.py        # Interactive test
+├── rivavoice/          # Main application package
+│   ├── ui/            # PyQt6 user interface
+│   ├── config.py      # Settings management
+│   └── tray_manager.py # Menu bar integration
+├── pyscribetranscribe/ # Audio & transcription engine
+│   ├── recorder.py    # PyAudio recording
+│   └── transcriber.py # ElevenLabs API client
+└── rivacore/          # Legacy core (being phased out)
 ```
 
-### Design Principles
+## 🛠️ Development
 
-- **Minimalist**: Only essential features
-- **Reliable**: Comprehensive error handling
-- **Clean**: UI-agnostic backend
-- **Fast**: Optimized for quick transcription
+### Requirements
 
-## Configuration
-
-Settings are stored in `~/.rivavoice/config.json`:
-
-```json
-{
-  "api_key": "your-elevenlabs-key",
-  "hotkey": "F1",
-  "timeout_minutes": 5,
-  "auto_paste": true,
-  "preserve_clipboard": false,
-  "chunked_mode": false
-}
-```
-
-## Usage Modes
-
-### Standard Mode
-Press hotkey to start recording, press again to stop and transcribe.
-
-### Chunked Mode
-Automatically transcribes after detecting silence. Great for dictation.
-
-### Direct Type Mode
-When `preserve_clipboard` is enabled, simulates keyboard typing instead of using clipboard.
-
-## API
-
-```python
-from rivacore import RivaBackend
-
-# Initialize backend
-backend = RivaBackend()
-
-# Configure
-backend.set_api_key("your-key")
-backend.set_hotkey("F1")
-
-# Record and transcribe
-backend.start_recording()
-text = backend.stop_recording()
-```
-
-## Development
+- macOS 10.15+
+- Python 3.8+
+- PyQt6
+- PyAudio
+- ElevenLabs API key
 
 ### Running Tests
 
 ```bash
-# Interactive backend test
-python test_backend.py
+# Run all tests
+pytest
 
-# Test specific features
-python test_chunked.py
-python test_fn_key.py
+# Run with coverage
+pytest --cov=rivavoice --cov=pyscribetranscribe
 ```
 
-### Building a UI
+### Building the App
 
-The backend is UI-agnostic. To build your own UI:
+```bash
+# Build macOS app bundle
+./build_app.sh
 
-1. Import `RivaBackend` from `rivacore`
-2. Use the backend API for all operations
-3. Handle callbacks for recording state changes
+# Create DMG for distribution
+./create_standalone.py
+```
 
-## Troubleshooting
+## 🤝 Contributing
 
-### Microphone Access
-macOS requires explicit microphone permission. Grant access when prompted.
+We love contributions! Please:
 
-### Hotkey Not Working
-Some applications may capture hotkeys. Try a different key combination.
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-### API Errors
-Ensure your ElevenLabs API key is valid and has sufficient credits.
+## 📝 License
 
-## License
+MIT License - see [LICENSE](LICENSE) file for details
 
-MIT License - See LICENSE file for details.
+## 🙏 Acknowledgments
 
-## Credits
+- [ElevenLabs](https://elevenlabs.io) for incredible speech recognition
+- [PyQt6](https://pypi.org/project/PyQt6/) for the beautiful UI framework
+- [PyAudio](https://pypi.org/project/PyAudio/) for reliable audio capture
 
-Built with:
-- [PyAudio](https://pypi.org/project/PyAudio/) - Audio recording
-- [ElevenLabs](https://elevenlabs.io/) - Speech transcription
-- [pynput](https://pypi.org/project/pynput/) - Global hotkeys
+---
+
+<p align="center">
+Built with ❤️ by <a href="https://github.com/borisdjordjevic">Boris Djordjevic</a> from <a href="https://www.199.company">199 Longevity</a>
+<br>
+<a href="https://www.199.company">199.company</a> | <a href="https://www.199bio.com">199bio.com</a>
+</p>
