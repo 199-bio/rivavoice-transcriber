@@ -143,3 +143,7 @@ cython_debug/
 
 # macOS files
 .DS_Store
+
+# Build artifacts
+*.dmg
+*.app

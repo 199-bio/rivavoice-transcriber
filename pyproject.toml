@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=45", "wheel", "py2app>=0.28"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "RivaVoice"
+version = "2.0.0"
+description = "Minimalist Speech-to-Text Application"
+authors = [{name = "199 Biotechnologies"}]
+requires-python = ">=3.8"
+dependencies = [
+    "pyaudio>=0.2.11",
+    "requests>=2.25.0",
+    "pyperclip>=1.8.0",
+    "pynput>=1.7.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "flake8>=6.0",
+    "black>=23.0",
+]
+build = [
+    "py2app>=0.28",
+]
+
+[project.scripts]
+rivavoice = "rivavoice:main"
+
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310', 'py311']
+
+[tool.flake8]
+max-line-length = 100
+extend-ignore = ["E203", "W503"]
+exclude = [".git", "__pycache__", "dist", "build", "*.egg-info"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
