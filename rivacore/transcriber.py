@@ -54,6 +54,9 @@ class Transcriber:
                     result = response.json()
                     text = result.get("text", "")
                     
+                    # Clean up the text to ensure proper spacing
+                    text = self._clean_text(text)
+                    
                     if self._logger:
                         self._logger.info(f"Transcription successful: {len(text)} chars")
                     
@@ -75,6 +78,33 @@ class Transcriber:
             if self._logger:
                 self._logger.error(f"Transcription error: {e}")
             return ""
+    
+    def _clean_text(self, text: str) -> str:
+        """Clean up transcribed text to ensure proper spacing"""
+        if not text:
+            return ""
+        
+        import re
+        
+        # Remove extra whitespace
+        text = re.sub(r'\s+', ' ', text.strip())
+        
+        # Fix spacing after punctuation
+        # Add space after period, comma, exclamation, question mark, colon, semicolon
+        # but only if followed by a letter
+        text = re.sub(r'([.!?,;:])([A-Za-z])', r'\1 \2', text)
+        
+        # Fix spacing before punctuation (remove extra spaces)
+        text = re.sub(r'\s+([.!?,;:])', r'\1', text)
+        
+        # Fix ellipsis spacing
+        text = re.sub(r'\.\.\.\s*([A-Za-z])', r'... \1', text)
+        
+        # Fix spacing around quotes
+        text = re.sub(r'"\s*([A-Za-z])', r'" \1', text)
+        text = re.sub(r'([A-Za-z])\s*"', r'\1"', text)
+        
+        return text
     
     def get_last_error(self) -> str:
         """Get last error message"""
