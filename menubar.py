@@ -29,7 +29,6 @@ class RivaMenuBar(QObject):
         self.tray_icon = None
         self.record_action = None
         self.autopaste_action = None
-        self.chunked_action = None
         self._setup_tray()
         
         # Update timer for status
@@ -95,12 +94,6 @@ class RivaMenuBar(QObject):
         self.autopaste_action.triggered.connect(self._toggle_autopaste)
         menu.addAction(self.autopaste_action)
         
-        # Chunked mode toggle
-        self.chunked_action = QAction("  Chunked Mode", self)
-        self.chunked_action.setCheckable(True)
-        self.chunked_action.setChecked(self.backend.get_status()['chunked_mode'])
-        self.chunked_action.triggered.connect(self._toggle_chunked)
-        menu.addAction(self.chunked_action)
         
         menu.addSeparator()
         
@@ -151,16 +144,6 @@ class RivaMenuBar(QObject):
         else:
             self.autopaste_action.setText("  Auto-paste")
             
-    def _toggle_chunked(self):
-        """Toggle chunked mode"""
-        current = self.backend.get_status()['chunked_mode']
-        self.backend.set_chunked_mode(not current)
-        
-        # Update menu item
-        if not current:
-            self.chunked_action.setText("✓ Chunked Mode")
-        else:
-            self.chunked_action.setText("  Chunked Mode")
             
     def _quit(self):
         """Clean up and quit"""

@@ -14,7 +14,6 @@ from typing import Optional, Dict, Any
 
 from .config import Config
 from .audio import AudioRecorder
-from .chunked_audio import ChunkedAudioRecorder
 from .transcriber import Transcriber
 from .hotkey import HotkeyManager
 from .permissions import PermissionChecker
@@ -33,7 +32,6 @@ class RivaBackend:
         
         # Initialize components first to avoid threading issues
         self._recorder = AudioRecorder(logger=self._logger)
-        self._chunked_recorder = None  # Initialized on demand
         self._transcriber = Transcriber(logger=self._logger)
         self._hotkey = HotkeyManager(logger=self._logger)
         
@@ -48,11 +46,6 @@ class RivaBackend:
         self._recording_lock = threading.Lock()
         self._recording_thread = None
         self._last_error = ""
-        
-        # Chunked mode state
-        self._chunked_mode = self._config.get("chunked_mode", False)
-        self._accumulated_transcript = ""
-        self._chunk_count = 0
         
         # Clean old temp files
         self._cleanup_temp_files()
@@ -204,16 +197,9 @@ class RivaBackend:
                 self._recording = False
             return False
         
-        if self._chunked_mode:
-            # Reset state for new chunked recording
-            self._accumulated_transcript = ""
-            self._chunk_count = 0
-            self._logger.info("Starting chunked recording session")
-            return self._start_chunked_recording()
-        else:
-            # Start regular recording
-            self._recording_thread = threading.Thread(target=self._record_with_timeout)
-            self._recording_thread.start()
+        # Start recording
+        self._recording_thread = threading.Thread(target=self._record_with_timeout)
+        self._recording_thread.start()
         
         self._logger.info("Recording started")
         return True
@@ -255,29 +241,6 @@ class RivaBackend:
                 return ""
             self._recording = False
         
-        if self._chunked_mode:
-            # Stop chunked recording
-            if self._chunked_recorder:
-                self._chunked_recorder.stop_recording()
-            
-            # Give a moment for any final chunk processing to complete
-            time.sleep(0.5)
-            
-            # Clear session timestamp for next recording
-            if hasattr(self, '_session_timestamp'):
-                delattr(self, '_session_timestamp')
-            
-            # Return accumulated transcript
-            final_text = self._accumulated_transcript
-            self._logger.info(f"Chunked recording complete: {self._chunk_count} chunks, {len(final_text)} chars total")
-            
-            # Reset for next recording
-            self._accumulated_transcript = ""
-            self._chunk_count = 0
-            
-            return final_text
-        
-        # Regular recording mode
         # Wait for recording thread to finish
         if self._recording_thread:
             self._recording_thread.join(timeout=1.0)
@@ -370,8 +333,6 @@ class RivaBackend:
             "api_key_set": bool(self._config.get("api_key")),
             "auto_paste": self._config.get("auto_paste", False),
             "preserve_clipboard": self._config.get("preserve_clipboard", False),
-            "chunked_mode": self._chunked_mode,
-            "chunk_silence_duration": self._config.get("chunk_silence_duration", 2.5)
         }
     
     def set_auto_paste(self, enabled: bool) -> bool:
@@ -395,126 +356,6 @@ class RivaBackend:
     def get_permission_status(self) -> Dict[str, Any]:
         """Get current permission status"""
         return PermissionChecker.check_all_permissions()
-    
-    def set_chunked_mode(self, enabled: bool, silence_duration: float = 2.5) -> bool:
-        """Enable or disable chunked transcription mode"""
-        self._chunked_mode = enabled
-        self._config.set("chunked_mode", enabled)
-        self._config.set("chunk_silence_duration", silence_duration)
-        self._config.save()
-        
-        self._logger.info(f"Chunked mode {'enabled' if enabled else 'disabled'}")
-        return True
-    
-    def _start_chunked_recording(self) -> bool:
-        """Start recording in chunked mode"""
-        # Always create new recorder to pick up config changes
-        self._chunked_recorder = ChunkedAudioRecorder(
-            silence_duration=self._config.get("chunk_silence_duration", 2.5),
-            on_chunk_ready=self._process_audio_chunk,
-            logger=self._logger
-        )
-        
-        return self._chunked_recorder.start_recording()
-    
-    def _process_audio_chunk(self, audio_path: str):
-        """Process a single audio chunk"""
-        self._logger.info(f"Processing audio chunk: {audio_path}")
-        try:
-            # Check if file exists and has content
-            import os
-            if not os.path.exists(audio_path):
-                self._logger.error(f"Audio chunk file not found: {audio_path}")
-                return
-            
-            file_size = os.path.getsize(audio_path)
-            self._logger.info(f"Chunk file size: {file_size} bytes")
-            
-            # Transcribe the chunk
-            api_key = self._config.get("api_key")
-            self._logger.info("Starting chunk transcription...")
-            chunk_text = self._transcriber.transcribe(audio_path, api_key)
-            
-            if chunk_text:
-                self._chunk_count += 1
-                self._logger.info(f"Chunk {self._chunk_count} transcribed: {len(chunk_text)} chars")
-                self._logger.debug(f"Chunk text: {chunk_text[:100]}...")
-                
-                # Deduplicate with previous transcript
-                if self._accumulated_transcript:
-                    merged_text = deduplicate_transcripts(
-                        self._accumulated_transcript, 
-                        chunk_text
-                    )
-                    # Extract only the new part
-                    new_text = merged_text[len(self._accumulated_transcript):]
-                    self._accumulated_transcript = merged_text
-                else:
-                    new_text = chunk_text
-                    self._accumulated_transcript = chunk_text
-                
-                # Clean the new text
-                new_text = clean_transcript(new_text)
-                
-                # Ensure proper spacing when adding to accumulated text
-                if self._accumulated_transcript and new_text:
-                    new_text = ensure_space_before_text(
-                        self._accumulated_transcript, 
-                        new_text
-                    )
-                
-                if new_text.strip():
-                    self._logger.info(f"New text to paste: {len(new_text)} chars")
-                    
-                    # Handle clipboard and auto-paste
-                    if self._config.get("auto_paste", False):
-                        if self._config.get("preserve_clipboard", False):
-                            # Direct type without using clipboard
-                            time.sleep(0.1)
-                            self._direct_type_text(new_text)
-                        else:
-                            # Copy to clipboard and paste
-                            self._copy_to_clipboard(new_text)
-                            time.sleep(0.1)
-                            self._paste_text()
-                    else:
-                        # Just copy to clipboard
-                        self._copy_to_clipboard(new_text)
-                    
-                    # Save partial transcript
-                    self._save_partial_transcript(new_text)
-            else:
-                self._logger.warning("No text returned from chunk transcription")
-                error = self._transcriber.get_last_error()
-                if error:
-                    self._logger.error(f"Transcription error: {error}")
-            
-            # Clean up chunk file
-            try:
-                os.remove(audio_path)
-                self._logger.debug(f"Removed chunk file: {audio_path}")
-            except Exception as e:
-                self._logger.warning(f"Failed to remove chunk file: {e}")
-                
-        except Exception as e:
-            self._logger.error(f"Chunk processing error: {e}", exc_info=True)
-    
-    def _save_partial_transcript(self, text: str):
-        """Save partial transcript to file"""
-        transcript_dir = Path.home() / "Documents" / "RivaTranscripts"
-        transcript_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Use session timestamp
-        if not hasattr(self, '_session_timestamp'):
-            self._session_timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        
-        file_path = transcript_dir / f"{self._session_timestamp}_chunked.txt"
-        
-        # Append to file
-        with open(file_path, 'a', encoding='utf-8') as f:
-            f.write(text + " ")
-        
-        self._logger.info(f"Partial transcript appended: {file_path}")
     
     def _save_transcript(self, text: str):
         """Save transcript to file"""

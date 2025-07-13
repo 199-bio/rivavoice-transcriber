@@ -105,9 +105,8 @@ class RivaVoiceTUI:
         
         # Settings line - compact
         paste = "ON" if status['auto_paste'] else "OFF"
-        chunk = "ON" if status['chunked_mode'] else "OFF"
         
-        print(f"  Auto-paste: {paste}   Chunked: {chunk}")
+        print(f"  Auto-paste: {paste}")
         print()
         
     def show_transcript(self):
@@ -144,7 +143,7 @@ class RivaVoiceTUI:
     def show_commands(self):
         """Display available commands - clean"""
         print("  Commands:")
-        print("  [R] Record   [P] Auto-paste   [C] Chunked   [Q] Quit")
+        print("  [R] Record   [P] Auto-paste   [Q] Quit")
         print()
     
     def set_message(self, msg):
@@ -217,10 +216,6 @@ class RivaVoiceTUI:
                     elif key == 'p':
                         current = self.backend.get_status()['auto_paste']
                         self.backend.set_auto_paste(not current)
-                        self.refresh_display()
-                    elif key == 'c':
-                        current = self.backend.get_status()['chunked_mode']
-                        self.backend.set_chunked_mode(not current)
                         self.refresh_display()
                     # Removed other commands for minimalism
                 
