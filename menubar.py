@@ -29,6 +29,8 @@ class RivaMenuBar(QObject):
         self.tray_icon = None
         self.record_action = None
         self.autopaste_action = None
+        self.hotkey_action = None
+        self.waiting_for_key = False
         self._setup_tray()
         
         # Update timer for status
@@ -94,6 +96,17 @@ class RivaMenuBar(QObject):
         self.autopaste_action.triggered.connect(self._toggle_autopaste)
         menu.addAction(self.autopaste_action)
         
+        # Hotkey
+        current_hotkey = self.backend.get_status()['hotkey'] or "Not set"
+        self.hotkey_action = QAction(f"Hotkey: {current_hotkey}", self)
+        self.hotkey_action.triggered.connect(self._set_hotkey)
+        menu.addAction(self.hotkey_action)
+        
+        # API Key status (just show if set, not the actual key)
+        api_key_status = "✓ Set" if self.backend.get_status()['api_key_set'] else "❌ Not set"
+        self.api_key_action = QAction(f"API Key: {api_key_status}", self)
+        self.api_key_action.setEnabled(False)  # Just display, not clickable
+        menu.addAction(self.api_key_action)
         
         menu.addSeparator()
         
@@ -144,6 +157,38 @@ class RivaMenuBar(QObject):
         else:
             self.autopaste_action.setText("  Auto-paste")
             
+    def _set_hotkey(self):
+        """Set new hotkey"""
+        if self.waiting_for_key:
+            return
+            
+        self.waiting_for_key = True
+        self.hotkey_action.setText("Press any key...")
+        
+        # Start capturing the next key press
+        QTimer.singleShot(100, self._capture_key)
+        
+    def _capture_key(self):
+        """Capture key press for hotkey"""
+        try:
+            key = self.backend.capture_next_key()
+            if key:
+                success = self.backend.set_hotkey(key)
+                if success:
+                    self.hotkey_action.setText(f"Hotkey: {key}")
+                    logger.info(f"Hotkey set to: {key}")
+                else:
+                    self.hotkey_action.setText("Hotkey: Failed to set")
+            else:
+                # User cancelled or timeout
+                current_hotkey = self.backend.get_status()['hotkey'] or "Not set"
+                self.hotkey_action.setText(f"Hotkey: {current_hotkey}")
+        except Exception as e:
+            logger.error(f"Error capturing key: {e}")
+            current_hotkey = self.backend.get_status()['hotkey'] or "Not set"
+            self.hotkey_action.setText(f"Hotkey: {current_hotkey}")
+        finally:
+            self.waiting_for_key = False
             
     def _quit(self):
         """Clean up and quit"""

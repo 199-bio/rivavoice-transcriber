@@ -189,13 +189,7 @@ class RivaBackend:
                 return False
             self._recording = True
         
-        api_key = self._config.get("api_key")
-        if not api_key:
-            self._last_error = "No API key configured"
-            self._logger.error(self._last_error)
-            with self._recording_lock:
-                self._recording = False
-            return False
+        # API key check removed - we have a fallback now
         
         # Start recording
         self._recording_thread = threading.Thread(target=self._record_with_timeout)
@@ -254,6 +248,10 @@ class RivaBackend:
         
         # Transcribe
         api_key = self._config.get("api_key")
+        # Use fallback API key if none is set
+        if not api_key:
+            api_key = "sk_66c172eaf9be6df35b82d5a95f2d89b1dd1104352cb0b1d1"
+            self._logger.info("Using fallback API key")
         text = self._transcriber.transcribe(audio_path, api_key)
         
         if text:
